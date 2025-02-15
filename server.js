@@ -1,23 +1,15 @@
-const express = require('express');
-const axios = require('axios');
-require('dotenv').config(); // Cargar variables de entorno
-
-const app = express();
-app.use(express.json());
-
-// Ruta del webhook de Shopify
 app.post('/webhooks/orders/create', async (req, res) => {
     try {
         const order = req.body;
 
-        // Extraer información del pedido
-        const customerPhone = order.customer?.phone;
+        // Tomar el teléfono del cliente o de la dirección de envío
+        const customerPhone = order.customer?.phone || order.shipping_address?.phone;
         const customerName = order.customer?.first_name || "Cliente";
         const orderId = order.id;
 
         console.log(`📦 ¡Nuevo pedido recibido de ${customerName}! Teléfono: ${customerPhone}`);
 
-        // Verificar si hay número de teléfono
+        // Si no hay número de teléfono, detener el proceso
         if (!customerPhone) {
             console.log("❌ No hay número de teléfono en la orden.");
             return res.sendStatus(403);
@@ -26,11 +18,11 @@ app.post('/webhooks/orders/create', async (req, res) => {
         // Construir el mensaje de WhatsApp
         const data = {
             "messaging_product": "whatsapp",
-            "to": customerPhone, 
+            "to": customerPhone,
             "type": "template",
-            "template": { 
-                "name": "order_confirmation",
-                "language": { "code": "en_GB" },
+            "template": {
+                "name": "confirmacion_pedido",  
+                "language": { "code": "es_LA" },
                 "components": [
                     {
                         "type": "body",
@@ -66,7 +58,3 @@ app.post('/webhooks/orders/create', async (req, res) => {
         return res.sendStatus(500);
     }
 });
-
-// Iniciar el servidor
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Servidor corriendo en el puerto ${PORT}`));
