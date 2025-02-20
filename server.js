@@ -10,10 +10,14 @@ app.post('/webhooks/orders/create', async (req, res) => {
     try {
         const order = req.body;
 
-        // Obtener número de teléfono
+        // Obtener datos del cliente
         const customerPhone = order.customer?.phone || order.shipping_address?.phone;
         const customerName = order.customer?.first_name || "Cliente";
         const orderId = order.id;
+        const estimatedDelivery = "1-2 días hábiles"; // Puedes hacer esto dinámico si tienes estimaciones reales
+
+        // Obtener URL de estado del pedido de Shopify
+        const orderStatusUrl = order.order_status_url || "https://www.example.com/";
 
         console.log(`📦 ¡Nuevo pedido recibido de ${customerName}! Teléfono: ${customerPhone}`);
 
@@ -28,14 +32,23 @@ app.post('/webhooks/orders/create', async (req, res) => {
             "to": customerPhone,
             "type": "template",
             "template": {
-                "name": "confirmacion_pedido",
+                "name": "confirmacion_orden",
                 "language": { "code": "es_LA" },
                 "components": [
                     {
                         "type": "body",
                         "parameters": [
-                            { "type": "text", "text": customerName },
-                            { "type": "text", "text": orderId.toString() }
+                            { "type": "text", "text": customerName }, // {{1}} - Nombre del cliente
+                            { "type": "text", "text": orderId.toString() }, // {{2}} - Número de orden
+                            { "type": "text", "text": estimatedDelivery } // {{3}} - Tiempo estimado de entrega
+                        ]
+                    },
+                    {
+                        "type": "button",
+                        "sub_type": "url",
+                        "index": "0",
+                        "parameters": [
+                            { "type": "text", "text": orderStatusUrl } // Botón con el link de seguimiento
                         ]
                     }
                 ]
